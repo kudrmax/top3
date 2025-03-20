@@ -18,9 +18,9 @@ async def main():
     setup_logger()
 
     # планировщик для отправки нотификаций
-    scheduler = AsyncIOScheduler()
-    scheduler.add_job(check_and_send_notifications, "interval", minutes=1)
-    scheduler.start()
+    # scheduler = AsyncIOScheduler()
+    # scheduler.add_job(check_and_send_notifications, "interval", minutes=1)
+    # scheduler.start()
 
     # телеграм бот
     bot = Bot(token=settings.bot.token)

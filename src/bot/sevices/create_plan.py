@@ -4,6 +4,7 @@ from typing import Any
 from aiogram.fsm.context import FSMContext
 
 from src.models.daily_plan import DailyPlanCreate
+from src.models.user import User
 
 
 class PropertyName(str, Enum):
@@ -16,11 +17,11 @@ class CreateDailyPlanStateService:
     PLAN_CREATE = 'plan_create'
 
     @classmethod
-    async def get_daily_plan_from_state(cls, state: FSMContext) -> DailyPlanCreate:
+    async def get_daily_plan_from_state(cls, user: User, state: FSMContext) -> DailyPlanCreate:
         data = await state.get_data()
         plan_create: DailyPlanCreate = data.get(cls.PLAN_CREATE)
         if plan_create is None:
-            return DailyPlanCreate()
+            return DailyPlanCreate(tg_id=user.tg_id)
         return plan_create
 
     @classmethod
@@ -28,8 +29,8 @@ class CreateDailyPlanStateService:
         await state.update_data({cls.PLAN_CREATE: plan_create})
 
     @classmethod
-    async def add_data_to_state(cls, state: FSMContext, obj: Any, property_name: PropertyName):
-        plan_create = await cls.get_daily_plan_from_state(state)
+    async def add_data_to_state(cls, user: User, state: FSMContext, obj: Any, property_name: PropertyName):
+        plan_create = await cls.get_daily_plan_from_state(user, state)
         match property_name.value:
             case PropertyName.PLAN:
                 plan_create.plan = obj

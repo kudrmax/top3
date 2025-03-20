@@ -2,6 +2,7 @@ from typing import List
 
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 
+from src.models.user import User
 from src.services.plans.service import daily_plans_service
 
 
@@ -17,8 +18,8 @@ def none():
     return ReplyKeyboardRemove()
 
 
-def main_kb():
-    if daily_plans_service.is_all_closed():
+def main_kb(user: User):
+    if daily_plans_service.is_all_closed(user):
         return create_plan_kb()
     return get_plan_kb()
 

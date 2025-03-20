@@ -1,12 +1,10 @@
 import dataclasses
 
+from aiogram.types import Message
 
-@dataclasses.dataclass
+
 class User:
-    id: int
-    telegram_id: int
+    tg_id: int
 
-
-@dataclasses.dataclass
-class UserCreate:
-    telegram_id: int
+    def __init__(self, message: Message):
+        self.tg_id = message.from_user.id

@@ -4,13 +4,14 @@ from aiogram.types import Message
 
 from src.bot.keyboards import none, create_plan_kb
 from src.bot.states import CompleteState
+from src.models.user import User
 from src.services.plans.service import daily_plans_service
 
 router = Router()
 
 
 async def complete_plan(message: Message, state: FSMContext):
-    if daily_plans_service.get_current() is None:
+    if daily_plans_service.get_current(User(message)) is None:
         await message.answer(
             "У вас нет открытых задач. Сначала создайте задачи.",
             reply_markup=create_plan_kb()
@@ -27,7 +28,7 @@ async def complete_plan(message: Message, state: FSMContext):
 @router.message(CompleteState.waiting_for_number)
 async def complete(message: Message, state: FSMContext):
     real_complete_count = int(message.text)
-    daily_plans_service.complete_current(real_complete_count)
+    daily_plans_service.complete_current(User(message), real_complete_count)
     await message.answer(
         "Задачи на сегодня закрыты. Вы можете поставить новые задачи.",
         reply_markup=create_plan_kb()

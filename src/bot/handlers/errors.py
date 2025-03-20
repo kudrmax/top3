@@ -7,6 +7,7 @@ from aiogram.types import ErrorEvent
 from requests.exceptions import ConnectionError
 
 from src.bot.keyboards import main_kb
+from src.models.user import User
 
 router = Router()
 
@@ -16,7 +17,7 @@ async def go_to_main_menu_after_error(event: ErrorEvent, state: FSMContext):
     if event.update.message:
         await event.update.message.answer(
             f"Oops, something went wrong!",
-            reply_markup=main_kb(),
+            reply_markup=main_kb(User(event.update.message)),
         )
     logger.error(f"Unhandled exception: {event.exception}")
     await state.clear()

@@ -7,26 +7,28 @@ from sqlalchemy.exc import IntegrityError
 
 from src.models.daily_plan import DailyPlan, DailyPlanCreate
 from src.errors import AlreadyExistsErr, NotAllPlansIsClosed
+from src.models.user import User
 
 
-class DailyGoalsRepository:
+class DailyPlansRepository:
     def __init__(self, engine: Engine):
         self.engine = engine
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    def create(self, new_goal: DailyPlanCreate) -> None:
-        if self.get_current() is not None:
+    def create(self, user: User, plan: DailyPlanCreate) -> None:
+        if self.get_current(user) is not None:
             raise NotAllPlansIsClosed
         try:
             with self.engine.connect() as conn:
                 query = text('''
-                    INSERT INTO daily_plans (date, plans, count)
-                    VALUES (:date, :plans, :count)
+                    INSERT INTO daily_plans (tg_id, date, plans, count)
+                    VALUES (:tg_id, :date, :plans, :count)
                 ''')
                 params = {
-                    "date": new_goal.date,
-                    "plans": new_goal.plan,
-                    "count": new_goal.count,
+                    "tg_id": plan.tg_id,
+                    "date": plan.date,
+                    "plans": plan.plan,
+                    "count": plan.count,
                 }
                 conn.execute(query, params)
                 conn.commit()
@@ -34,8 +36,8 @@ class DailyGoalsRepository:
             if 'duplicate key value violates unique constraint' in str(e):
                 raise AlreadyExistsErr
 
-    def complete_current(self, real_complete_count):
-        current_goals = self.get_current()
+    def complete_current(self, user: User, real_complete_count):
+        current_goals = self.get_current(user)
         if current_goals is None:
             raise
 
@@ -52,27 +54,31 @@ class DailyGoalsRepository:
             conn.execute(query, params)
             conn.commit()
 
-    def get_current(self) -> DailyPlan | None:
+    def get_current(self, user: User) -> DailyPlan | None:
         with self.engine.connect() as conn:
             query = text('''
                 SELECT * FROM daily_plans
-                WHERE real_count IS NULL
+                WHERE tg_id = :tg_id
+                    AND real_count IS NULL
             ''')
-            result = conn.execute(query)
+            params = {'tg_id': user.tg_id}
+            result = conn.execute(query, params)
             row = result.fetchone()
         if row is None:
             return None
         return self.__convert_row_to_model(row)
 
-    def get_last_closed(self):
+    def get_last_closed(self, user: User):
         with self.engine.connect() as conn:
             query = text('''
-               SELECT * FROM daily_plans
-               WHERE real_count IS NOT NULL
-               ORDER BY date DESC
-               LIMIT 1
+                SELECT * FROM daily_plans
+                WHERE tg_id = :tg_id
+                    AND real_count IS NOT NULL
+                ORDER BY date DESC
+                LIMIT 1
            ''')
-            result = conn.execute(query)
+            params = {'tg_id': user.tg_id}
+            result = conn.execute(query, params)
             row = result.fetchone()
         if row is None:
             return None

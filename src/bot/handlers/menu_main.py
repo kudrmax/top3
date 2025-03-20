@@ -7,6 +7,7 @@ from src.bot.handlers.complete_plan import complete_plan
 from src.bot.handlers.create_plan import try_create_daily_plan
 from src.bot.handlers.get_plan import get_plan
 from src.bot.keyboards import main_kb
+from src.models.user import User
 
 router = Router()
 
@@ -17,7 +18,7 @@ async def start_main_menu_pipeline(
 ):
     await message.answer(
         "Нажмите кнопку",
-        reply_markup=main_kb()
+        reply_markup=main_kb(User(message)),
     )
     await state.clear()
 

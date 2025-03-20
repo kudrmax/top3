@@ -7,6 +7,7 @@ from src.bot.sevices.create_plan import CreateDailyPlanStateService, PropertyNam
 from src.bot.keyboards import none, today_or_tomorrow_kb, get_plan_kb
 from src.bot.states import CreateState
 from src.errors import NotAllPlansIsClosed
+from src.models.user import User
 from src.services.plans.errors import NeedPlanErr, NeedCountErr, NeedDateErr, ThereIsOpenPlanErr
 from src.services.plans.service import daily_plans_service
 
@@ -14,9 +15,9 @@ router = Router()
 
 
 async def try_create_daily_plan(message: Message, state: FSMContext):
-    daily_plan = await CreateDailyPlanStateService.get_daily_plan_from_state(state)
+    daily_plan = await CreateDailyPlanStateService.get_daily_plan_from_state(User(message), state)
     try:
-        daily_plans_service.create(daily_plan)
+        daily_plans_service.create(User(message), daily_plan)
     except NeedPlanErr:
         await get_plan(message, state)
     except NeedCountErr:
@@ -33,7 +34,7 @@ async def try_create_daily_plan(message: Message, state: FSMContext):
         await state.clear()
     else:
         await message.answer(
-            'Топ-3 задачи добавлены', # TODO иногда на завтра, иногда на сегодня. Нужно указать дату
+            'Топ-3 задачи добавлены',  # TODO иногда на завтра, иногда на сегодня. Нужно указать дату
             reply_markup=get_plan_kb()
         )
         await state.clear()
@@ -49,7 +50,7 @@ async def get_plan(message: Message, state: FSMContext):
 
 @router.message(CreateState.waiting_for_plan)
 async def set_plan(message: Message, state: FSMContext):
-    await CreateDailyPlanStateService.add_data_to_state(state, message.text, PropertyName.PLAN)
+    await CreateDailyPlanStateService.add_data_to_state(User(message), state, message.text, PropertyName.PLAN)
     await try_create_daily_plan(message, state)
 
 
@@ -66,14 +67,14 @@ async def set_count(message: Message, state: FSMContext):
     count = await validate_count(message, message.text)
     if not count:
         return
-    await CreateDailyPlanStateService.add_data_to_state(state, count, PropertyName.COUNT)
+    await CreateDailyPlanStateService.add_data_to_state(User(message), state, count, PropertyName.COUNT)
     await try_create_daily_plan(message, state)
 
 
 async def get_date(message: Message, state: FSMContext):
-    if daily_plans_service.is_date_for_creation_tomorrow():
+    if daily_plans_service.is_date_for_creation_tomorrow(User(message)):
         date = dt.date.today() + dt.timedelta(days=1)
-        await CreateDailyPlanStateService.add_data_to_state(state, date, PropertyName.DATE)
+        await CreateDailyPlanStateService.add_data_to_state(User(message), state, date, PropertyName.DATE)
         await try_create_daily_plan(message, state)
     else:
         await message.answer(
@@ -86,7 +87,7 @@ async def get_date(message: Message, state: FSMContext):
 @router.message(CreateState.waiting_for_date)
 async def set_date(message: Message, state: FSMContext):
     date = dt.date.today() + dt.timedelta(days=1) if 'завтра' in message.text else dt.date.today()
-    await CreateDailyPlanStateService.add_data_to_state(state, date, PropertyName.DATE)
+    await CreateDailyPlanStateService.add_data_to_state(User(message), state, date, PropertyName.DATE)
     await try_create_daily_plan(message, state)
 
 
