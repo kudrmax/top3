@@ -1,0 +1,12 @@
+sqlalchemy
+psycopg2-binary
+pydantic
+pydantic-settings
+python-dotenv
+pytest
+aiogram
+apscheduler
+python-decouple
+requests
+yadisk
+yandex_cloud_ml_sdk
