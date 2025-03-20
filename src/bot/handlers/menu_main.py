@@ -3,9 +3,10 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from src.bot.handlers.complete_plan import complete_plan
-from src.bot.handlers.create_plan import try_create_daily_plan
-from src.bot.handlers.get_plan import get_plan
+from src.bot.handlers.plans.complete import complete_plan
+from src.bot.handlers.plans.create import try_create_daily_plan
+from src.bot.handlers.plans.get import get_plan
+from src.bot.handlers.texsts import Texts
 from src.bot.keyboards import main_kb
 from src.models.user import User
 
@@ -41,3 +42,8 @@ async def create(message: Message, state: FSMContext):
 @router.message(StateFilter(None), F.text.lower().contains('подтвердить'))
 async def complete(message: Message, state: FSMContext):
     await complete_plan(message, state)
+
+
+@router.message(StateFilter(None), F.text.lower().contains('изменить'))
+async def complete(message: Message, state: FSMContext):
+    await message.answer(Texts.not_implemented)

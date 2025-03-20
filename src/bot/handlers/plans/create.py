@@ -1,8 +1,10 @@
 from aiogram import Router
+from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 import datetime as dt
 
+from src.bot.handlers.texsts import Texts
 from src.bot.sevices.create_plan import CreateDailyPlanStateService, PropertyName
 from src.bot.keyboards import none, today_or_tomorrow_kb, get_plan_kb
 from src.bot.states import CreateState
@@ -28,13 +30,13 @@ async def try_create_daily_plan(message: Message, state: FSMContext):
         pass
     except NotAllPlansIsClosed:
         await message.answer(
-            'У вас есть незакрытые планы. Сначала закройте их',
+            Texts.there_id_not_completed_plan,
             reply_markup=get_plan_kb()
         )
         await state.clear()
     else:
         await message.answer(
-            'Топ-3 задачи добавлены',  # TODO иногда на завтра, иногда на сегодня. Нужно указать дату
+            Texts.plan_was_created,  # TODO иногда на завтра, иногда на сегодня. Нужно указать дату
             reply_markup=get_plan_kb()
         )
         await state.clear()
@@ -42,8 +44,9 @@ async def try_create_daily_plan(message: Message, state: FSMContext):
 
 async def get_plan(message: Message, state: FSMContext):
     await message.answer(
-        'Введите топ-3 самые важные задачи в порядке важности',
-        reply_markup=none()
+        Texts.need_plan,
+        reply_markup=none(),
+        parse_mode=ParseMode.HTML
     )
     await state.set_state(CreateState.waiting_for_plan)
 
