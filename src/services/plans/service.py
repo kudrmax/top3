@@ -3,7 +3,7 @@ import datetime as dt
 
 from src.models.daily_plan import DailyPlanCreate, DailyPlan
 from src.services.plans.errors import NeedPlanErr, NeedCountErr, NeedDateErr, ThereIsOpenPlanErr
-from src.storage.postgres.connection.engine import engine
+from src.storage.postgres.connection import engine
 from src.storage.postgres.repositories.daily_goals import DailyGoalsRepository
 
 

@@ -3,9 +3,9 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from src.bot.handlers.pipelines.complete import complete_plan
-from src.bot.handlers.pipelines.create import try_create_daily_plan
-from src.bot.handlers.pipelines.get import get_plan
+from src.bot.handlers.complete_plan import complete_plan
+from src.bot.handlers.create_plan import try_create_daily_plan
+from src.bot.handlers.get_plan import get_plan
 from src.bot.keyboards import main_kb
 
 router = Router()
