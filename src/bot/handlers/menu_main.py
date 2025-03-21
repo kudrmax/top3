@@ -3,7 +3,6 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from src.bot.handlers.bugs.create import create_bug
 from src.bot.handlers.plans.complete import complete_plan
 from src.bot.handlers.plans.create import try_create_daily_plan
 from src.bot.handlers.plans.get import get_plan
