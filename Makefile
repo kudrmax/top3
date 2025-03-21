@@ -11,13 +11,13 @@ help:
 	@echo "load_dumped – вручную импортировать базу данных. Необходимо казать путь к файлу импорта: make load_dumped file=/path/to/file/file.sqli"
 
 debug:
-	docker compose up -d db
+	docker compose up -d top3_db
 
 run:
-	docker compose up -d db && docker compose up -d bot --build
+	docker compose up -d top3_db && docker compose up -d top3_bot --build
 
 down:
-	docker compose down db bot
+	docker compose down top3_db top3_bot
 
 migrate:
 	    @for sql_file in $$(ls -v $(MIGRATIONS_DIR)/*.sql); do \
