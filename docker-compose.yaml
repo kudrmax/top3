@@ -1,7 +1,7 @@
 services:
-  db:
+  db_top3:
     image: postgres:14.1-alpine
-    container_name: "db"
+    container_name: "top3_db"
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -12,10 +12,10 @@ services:
       - "${POSTGRES_PORT}:5432"
     restart: always
 
-  bot:
-    container_name: "bot"
+  top3_bot:
+    container_name: "top3_bot"
     depends_on:
-      - db
+      - db_top3
     build:
       context: .
       dockerfile: Dockerfile
