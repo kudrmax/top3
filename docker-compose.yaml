@@ -11,3 +11,19 @@ services:
     ports:
       - "${POSTGRES_PORT}:5432"
     restart: always
+
+  bot:
+    container_name: "bot"
+    depends_on:
+      - db
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python3 bot.py
+    volumes:
+      - .:/bot
+    environment:
+      - RUN_WITH_DOCKER=True
+    env_file:
+      - .env
+    restart: always
