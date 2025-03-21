@@ -18,6 +18,10 @@ async def start_main_menu_pipeline(
         state: FSMContext,
 ):
     await message.answer(
+        Texts.start,
+        reply_markup=main_kb(User(message)),
+    )
+    await message.answer(
         "Нажмите кнопку",
         reply_markup=main_kb(User(message)),
     )
