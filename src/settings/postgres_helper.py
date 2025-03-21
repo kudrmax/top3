@@ -7,7 +7,7 @@ from src.settings.env_vars import PostgresEnvVarsNames
 
 
 class PostgresConnection:
-    docker_host = 'db'
+    docker_host = 'top3_db'
     docker_port = 5432
     not_docker_host = 'localhost'
 
