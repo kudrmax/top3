@@ -1,5 +1,5 @@
 services:
-  db_top3:
+  top3_db:
     image: postgres:14.1-alpine
     container_name: "top3_db"
     environment:
