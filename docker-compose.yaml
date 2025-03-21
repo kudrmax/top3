@@ -15,7 +15,7 @@ services:
   top3_bot:
     container_name: "top3_bot"
     depends_on:
-      - db_top3
+      - top3_db
     build:
       context: .
       dockerfile: Dockerfile
