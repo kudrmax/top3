@@ -3,6 +3,7 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
+from src.bot.handlers.bugs.create import create_bug
 from src.bot.handlers.plans.complete import complete_plan
 from src.bot.handlers.plans.create import try_create_daily_plan
 from src.bot.handlers.plans.get import get_plan
@@ -45,5 +46,10 @@ async def complete(message: Message, state: FSMContext):
 
 
 @router.message(StateFilter(None), F.text.lower().contains('изменить'))
-async def complete(message: Message, state: FSMContext):
+async def update(message: Message, state: FSMContext):
     await message.answer(Texts.not_implemented)
+
+
+@router.message(StateFilter(None), F.text.lower().contains('сообщить'))
+async def report(message: Message, state: FSMContext):
+    await message.answer(Texts.report_bug_to_max)
