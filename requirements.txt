@@ -7,3 +7,5 @@ aiogram
 apscheduler
 python-decouple
 requests
+pytest
+pytest-mock
