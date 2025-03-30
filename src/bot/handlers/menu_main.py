@@ -23,7 +23,7 @@ async def start_main_menu_pipeline(
         reply_markup=kb,
     )
     await message.answer(
-        "Нажмите кнопку",
+        'Нажмите кнопку "Создать задачи"',
         reply_markup=kb,
     )
     await state.clear()

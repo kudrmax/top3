@@ -13,5 +13,9 @@ def i(text: str) -> str:
     return hd.italic(text)
 
 
+def code(text: str) -> str:
+    return hd.code(text)
+
+
 def link(text: str, url: str) -> str:
     return hd.link(text, url)

@@ -4,14 +4,16 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 import datetime as dt
 
+from src.bot.functions.plans.get_current_plan_text import get_current_plan_text
 from src.bot.handlers.texsts import Texts
 from src.bot.sevices.create_plan import CreateDailyPlanStateService, PropertyName
 from src.bot.keyboards import none, today_or_tomorrow_kb, get_plan_kb
 from src.bot.states import CreateState
-from src.errors import NotAllPlansIsClosed
+from src.common.date_and_time import get_today
 from src.models.user import User
 from src.services.plans.errors import NeedPlanErr, NeedCountErr, NeedDateErr, ThereIsOpenPlanErr
 from src.services.plans.service import daily_plans_service
+from src.storage.postgres.repositories.daily_plans.errors import PlanAlreadyExistsWithThisDateErr
 
 router = Router()
 
@@ -27,17 +29,26 @@ async def try_create_daily_plan(message: Message, state: FSMContext):
     except NeedDateErr:
         await get_date(message, state)
     except ThereIsOpenPlanErr:
-        pass
-    except NotAllPlansIsClosed:
         await message.answer(
             Texts.there_id_not_completed_plan,
             reply_markup=get_plan_kb()
         )
         await state.clear()
+    except PlanAlreadyExistsWithThisDateErr:
+        await message.answer(
+            Texts.plan_already_exists_with_this_date,
+            reply_markup=get_plan_kb()
+        )
+        await state.clear()
     else:
+        plan_text = get_current_plan_text(User(message))
         await message.answer(
             Texts.plan_was_created,  # TODO иногда на завтра, иногда на сегодня. Нужно указать дату
-            reply_markup=get_plan_kb()
+        )
+        await message.answer(
+            plan_text,  # TODO иногда на завтра, иногда на сегодня. Нужно указать дату
+            reply_markup=get_plan_kb(),
+            parse_mode=ParseMode.HTML
         )
         await state.clear()
 
@@ -48,6 +59,13 @@ async def get_plan(message: Message, state: FSMContext):
         reply_markup=none(),
         parse_mode=ParseMode.HTML
     )
+    is_tomorrow = daily_plans_service.is_date_for_creation_tomorrow(User(message))
+    if is_tomorrow:
+        await message.answer(
+            Texts.you_type_plans_for_tomorrow,
+            reply_markup=none(),
+            parse_mode=ParseMode.HTML
+        )
     await state.set_state(CreateState.waiting_for_plan)
 
 
@@ -59,7 +77,7 @@ async def set_plan(message: Message, state: FSMContext):
 
 async def get_count(message: Message, state: FSMContext):
     await message.answer(
-        'Введите количество задач',
+        'Сколько задач вы ввели?',
         reply_markup=none()
     )
     await state.set_state(CreateState.waiting_for_count)
@@ -76,7 +94,7 @@ async def set_count(message: Message, state: FSMContext):
 
 async def get_date(message: Message, state: FSMContext):
     if daily_plans_service.is_date_for_creation_tomorrow(User(message)):
-        date = dt.date.today() + dt.timedelta(days=1)
+        date = get_today() + dt.timedelta(days=1)
         await CreateDailyPlanStateService.add_data_to_state(User(message), state, date, PropertyName.DATE)
         await try_create_daily_plan(message, state)
     else:
@@ -89,7 +107,7 @@ async def get_date(message: Message, state: FSMContext):
 
 @router.message(CreateState.waiting_for_date)
 async def set_date(message: Message, state: FSMContext):
-    date = dt.date.today() + dt.timedelta(days=1) if 'завтра' in message.text else dt.date.today()
+    date = get_today() + dt.timedelta(days=1) if 'завтра' in message.text else dt.date.today()
     await CreateDailyPlanStateService.add_data_to_state(User(message), state, date, PropertyName.DATE)
     await try_create_daily_plan(message, state)
 

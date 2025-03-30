@@ -1,7 +1,9 @@
 from aiogram import Router
+from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
+from src.bot.functions.plans.get_current_plan_text import get_current_plan_text
 from src.bot.handlers.texsts import Texts
 from src.bot.keyboards import none, create_plan_kb
 from src.bot.states import CompleteState
@@ -18,6 +20,11 @@ async def complete_plan(message: Message, state: FSMContext):
             reply_markup=create_plan_kb()
         )
     else:
+        await message.answer(
+            get_current_plan_text(User(message)),
+            reply_markup=none(),
+            parse_mode=ParseMode.HTML
+        )
         # TODO добавить проверку на то, если на задаче дата завтра, а мы сегодня, то нельзя закрыть задачи (до наступления дня)
         await message.answer(
             "Сколько задач вы выполнили?",
@@ -32,9 +39,14 @@ async def complete(message: Message, state: FSMContext):
     if real_complete_count is None:
         return
     daily_plans_service.complete_current(User(message), real_complete_count)
+    last_plan = daily_plans_service.get_last_closed_plan_by_user(User(message))
+    real = last_plan.real_count
+    expected = last_plan.count
 
     await message.answer(
-        "Задачи на сегодня закрыты. Теперь вы можете поставить новые задачи.",
+        f"🎉 Задачи на сегодня закрыты.\n\n"
+        f"Вы выполнили {real} из {expected} задач!\n\n"
+        f"Теперь вы можете поставить новые задачи.",
         reply_markup=create_plan_kb()
     )
     await state.clear()

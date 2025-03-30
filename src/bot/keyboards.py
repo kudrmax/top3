@@ -32,7 +32,7 @@ def today_or_tomorrow_kb():
 
 def create_plan_kb():
     return make_keyboard_by_lists([
-        ['Создать топ-3 задачи']
+        ['Создать задачи']
     ])
 
 

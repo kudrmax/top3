@@ -62,7 +62,7 @@ class DailyPlansRepository(BaseRepository):
         )
         self.execute(query, params)
 
-    def get_last_closed_plan_by_user(self, user: User):
+    def get_last_closed_plan_by_user(self, user: User) -> DailyPlan | None:
         query = text('''
             SELECT * FROM daily_plans
             WHERE tg_id = :tg_id
@@ -99,19 +99,3 @@ class DailyPlansRepository(BaseRepository):
             if plan:
                 plans.append(plan)
         return plans
-
-
-if __name__ == '__main__':
-    r = DailyPlansRepository(engine)
-
-    u = User()
-    u.set_tg_id(123)
-
-    r.create(
-        user=u,
-        plan=DailyPlanCreate(
-            plan='123',
-            count=456,
-            date=datetime.today().date(),
-        ),
-    )

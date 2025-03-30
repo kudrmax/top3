@@ -44,10 +44,38 @@ def test_service_create_success(mock_service, test_case):
         TestCase(
             user=User(666),
             plan=DailyPlanCreate(
+
+            ),
+            exception=NeedPlanErr
+        ),
+        TestCase(
+            user=User(666),
+            plan=DailyPlanCreate(
+                count=5,
+            ),
+            exception=NeedPlanErr
+        ),
+        TestCase(
+            user=User(666),
+            plan=DailyPlanCreate(
+                date=dt.datetime(2023, 10, 1),
+            ),
+            exception=NeedPlanErr
+        ),
+        TestCase(
+            user=User(666),
+            plan=DailyPlanCreate(
                 count=5,
                 date=dt.datetime(2023, 10, 1),
             ),
             exception=NeedPlanErr
+        ),
+        TestCase(
+            user=User(666),
+            plan=DailyPlanCreate(
+                plan="Test plan 1",
+            ),
+            exception=NeedCountErr
         ),
         TestCase(
             user=User(666),

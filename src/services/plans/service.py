@@ -1,6 +1,7 @@
 import logging
 import datetime as dt
 
+from src.common.date_and_time import get_today
 from src.models.daily_plan import DailyPlanCreate, DailyPlan
 from src.models.user import User
 from src.services.plans.errors import NeedPlanErr, NeedCountErr, NeedDateErr, ThereIsOpenPlanErr
@@ -32,14 +33,17 @@ class DailyPlansService:
         return self.get_current(user) is None
 
     def is_date_for_creation_tomorrow(self, user: User) -> bool:
-        current_date = dt.date.today()
-        last_plan = self.repository.get_last_closed_plan_by_user(user)
+        last_plan = self.get_last_closed_plan_by_user(user)
         if last_plan is None:
             return False
+        current_date = get_today()
         last_plan_create_date = last_plan.date
         if current_date == last_plan_create_date:
             return True
         return False
+
+    def get_last_closed_plan_by_user(self, user: User) -> DailyPlan | None:
+        return self.repository.get_last_closed_plan_by_user(user)
 
     def _raise_if_not_ready_to_create(self, plan_create: DailyPlanCreate):
         if not plan_create.plan:
