@@ -1,14 +1,18 @@
-class NeedPlanErr(Exception):
-    pass
+from src.errors.base_exception import MyException
+from src.models.user import User
 
 
-class NeedCountErr(Exception):
-    pass
+class NeedPlanErr(MyException):
+    message = "Need a plan"
 
 
-class NeedDateErr(Exception):
-    pass
+class NeedCountErr(MyException):
+    message = "Need count"
 
 
-class ThereIsOpenPlanErr(Exception):
-    pass
+class NeedDateErr(MyException):
+    message = "Need date"
+
+
+class ThereIsOpenPlanErr(MyException):
+    message = "There is open plan"

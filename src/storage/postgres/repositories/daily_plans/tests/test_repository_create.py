@@ -1,5 +1,4 @@
 import dataclasses
-from unittest.mock import ANY
 
 import pytest
 import datetime as dt
@@ -9,7 +8,6 @@ from sqlalchemy.exc import IntegrityError
 from src.common.testcase import TestCaseBase
 from src.models.daily_plan import DailyPlanCreate
 from src.models.user import User
-from src.storage.postgres.repositories.base import Params
 from src.storage.postgres.repositories.daily_plans.errors import PlanAlreadyExistsWithThisDateErr
 
 

@@ -21,7 +21,7 @@ class CreateDailyPlanStateService:
         data = await state.get_data()
         plan_create: DailyPlanCreate = data.get(cls.PLAN_CREATE)
         if plan_create is None:
-            return DailyPlanCreate(tg_id=user.tg_id)
+            return DailyPlanCreate()
         return plan_create
 
     @classmethod
