@@ -11,6 +11,8 @@ services:
     ports:
       - "${POSTGRES_PORT}:5432"
     restart: always
+    volumes:
+      - pgdata_top3:/var/lib/postgresql/data
 
   top3_bot:
     container_name: "top3_bot"
@@ -27,3 +29,6 @@ services:
     env_file:
       - .env
     restart: always
+
+volumes:
+  pgdata_top3:
