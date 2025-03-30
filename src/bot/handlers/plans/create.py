@@ -5,48 +5,44 @@ from aiogram.types import Message
 import datetime as dt
 
 from src.bot.functions.plans.get_current_plan_text import get_current_plan_text
+from src.bot.functions.style import b
 from src.bot.handlers.texsts import Texts
 from src.bot.sevices.create_plan import CreateDailyPlanStateService, PropertyName
-from src.bot.keyboards import none, today_or_tomorrow_kb, get_plan_kb
+from src.bot.keyboards import none, today_or_tomorrow_kb, get_plan_kb, main_kb
 from src.bot.states import CreateState
-from src.common.date_and_time import get_today
+from src.common.date_and_time import get_today, get_tomorrow
 from src.models.user import User
-from src.services.plans.errors import NeedPlanErr, NeedCountErr, NeedDateErr, ThereIsOpenPlanErr
+from src.services.plans.errors import NeedPlanErr, NeedCountErr, NeedDateErr
 from src.services.plans.service import daily_plans_service
-from src.storage.postgres.repositories.daily_plans.errors import PlanAlreadyExistsWithThisDateErr
 
 router = Router()
 
+not_all_is_closed_reply = "Вы уже выбрали задачи и пока не закрыли их, поэтому создать задачи не получиться. Сначала закройте эти задачи:"
+
 
 async def try_create_daily_plan(message: Message, state: FSMContext):
-    daily_plan = await CreateDailyPlanStateService.get_daily_plan_from_state(User(message), state)
+    user = User(message)
+
+    stop = await stop_if_cannot_create_and_reply(message, state)
+    if stop:
+        return
+
+    daily_plan = await CreateDailyPlanStateService.get_daily_plan_from_state(user, state)
     try:
-        daily_plans_service.create(User(message), daily_plan)
+        daily_plans_service.create(user, daily_plan)
     except NeedPlanErr:
         await get_plan(message, state)
     except NeedCountErr:
         await get_count(message, state)
     except NeedDateErr:
         await get_date(message, state)
-    except ThereIsOpenPlanErr:
-        await message.answer(
-            Texts.there_id_not_completed_plan,
-            reply_markup=get_plan_kb()
-        )
-        await state.clear()
-    except PlanAlreadyExistsWithThisDateErr:
-        await message.answer(
-            Texts.plan_already_exists_with_this_date,
-            reply_markup=get_plan_kb()
-        )
-        await state.clear()
     else:
-        plan_text = get_current_plan_text(User(message))
+        plan_text = get_current_plan_text(user)
         await message.answer(
-            Texts.plan_was_created,  # TODO иногда на завтра, иногда на сегодня. Нужно указать дату
+            Texts.plan_was_created,
         )
         await message.answer(
-            plan_text,  # TODO иногда на завтра, иногда на сегодня. Нужно указать дату
+            plan_text,
             reply_markup=get_plan_kb(),
             parse_mode=ParseMode.HTML
         )
@@ -62,7 +58,7 @@ async def get_plan(message: Message, state: FSMContext):
     is_tomorrow = daily_plans_service.is_date_for_creation_tomorrow(User(message))
     if is_tomorrow:
         await message.answer(
-            Texts.you_type_plans_for_tomorrow,
+            f"Обращаю внимание, что вы создаете задачи на {b('завтра')}, так как сегодня вы уже выполнили свои задачи!",
             reply_markup=none(),
             parse_mode=ParseMode.HTML
         )
@@ -130,3 +126,32 @@ async def validate_count(message: Message, text: str) -> int | None:
         return None
 
     return count
+
+
+async def get_not_all_is_closed_reply(message: Message, state: FSMContext):
+    await message.answer(
+        not_all_is_closed_reply
+    )
+    await message.answer(
+        get_current_plan_text(User(message)),
+        reply_markup=get_plan_kb(),
+        parse_mode=ParseMode.HTML
+    )
+    await state.clear()
+
+
+async def stop_if_cannot_create_and_reply(message: Message, state: FSMContext) -> bool:
+    user = User(message)
+    if daily_plans_service.not_all_is_closed(user):
+        await get_not_all_is_closed_reply(message, state)
+        return True
+
+    last_closed_plan_date = daily_plans_service.get_last_closed_plan_date(user)
+    if last_closed_plan_date == get_tomorrow():
+        await message.answer(
+            "Вы уже закрыли задачи и на сегодня, и на завтра. Дождитесь следующего дня, чтобы создать новые.",
+            reply_markup=main_kb(user)
+        )
+        return True
+
+    return False

@@ -4,9 +4,11 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from src.bot.functions.plans.get_current_plan_text import get_current_plan_text
+from src.bot.functions.style import b
 from src.bot.handlers.texsts import Texts
-from src.bot.keyboards import none, create_plan_kb
+from src.bot.keyboards import none, create_plan_kb, get_plan_kb, main_kb
 from src.bot.states import CompleteState
+from src.common.date_and_time import get_tomorrow
 from src.models.user import User
 from src.services.plans.service import daily_plans_service
 
@@ -14,23 +16,36 @@ router = Router()
 
 
 async def complete_plan(message: Message, state: FSMContext):
-    if daily_plans_service.get_current(User(message)) is None:
+    if daily_plans_service.all_is_closed(User(message)):
         await message.answer(
-            Texts.plan_is_not_created,
+            "Вы еще не создали задачи. Сначала создайте их",
             reply_markup=create_plan_kb()
         )
-    else:
+        return
+
+    current = daily_plans_service.get_current(User(message))
+    if current.date == get_tomorrow():
         await message.answer(
-            get_current_plan_text(User(message)),
-            reply_markup=none(),
+            f'У вас есть созданные задачи, но они созданы на {b("завтра")}. Дождитесь завтра, чтобы закрыть их.',
             parse_mode=ParseMode.HTML
         )
-        # TODO добавить проверку на то, если на задаче дата завтра, а мы сегодня, то нельзя закрыть задачи (до наступления дня)
         await message.answer(
-            "Сколько задач вы выполнили?",
-            reply_markup=none()
+            get_current_plan_text(User(message)),
+            reply_markup=get_plan_kb(),
+            parse_mode=ParseMode.HTML
         )
-        await state.set_state(CompleteState.waiting_for_number)
+        return
+
+    await message.answer(
+        "Сколько задач вы выполнили?",
+        reply_markup=none()
+    )
+    await message.answer(
+        get_current_plan_text(User(message)),
+        reply_markup=none(),
+        parse_mode=ParseMode.HTML
+    )
+    await state.set_state(CompleteState.waiting_for_number)
 
 
 @router.message(CompleteState.waiting_for_number)
@@ -38,6 +53,7 @@ async def complete(message: Message, state: FSMContext):
     real_complete_count = await validate_real_count(message)
     if real_complete_count is None:
         return
+
     daily_plans_service.complete_current(User(message), real_complete_count)
     last_plan = daily_plans_service.get_last_closed_plan_by_user(User(message))
     real = last_plan.real_count
@@ -57,14 +73,14 @@ async def validate_real_count(message: Message) -> int | None:
         real_complete_count = int(message.text)
     except ValueError:
         await message.answer(
-            'Количество задач – это число, поэтому введите число',
+            'Количество задач – это число, поэтому введите число.',
             reply_markup=none()
         )
         return
 
     if real_complete_count < 0:
         await message.answer(
-            'Количество задач не может быть меньше 0',
+            'Количество задач не может быть меньше 0.',
             reply_markup=none()
         )
         return
@@ -73,7 +89,7 @@ async def validate_real_count(message: Message) -> int | None:
     if real_complete_count > plan.count:
         await message.answer(
             'Вы не могли закрыть больше задач, чем запланировали.'
-            f'Введите число меньшее или равное {plan.count}',
+            f'Введите число меньшее или равное {plan.count}.',
             reply_markup=none()
         )
         return

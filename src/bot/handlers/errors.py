@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 from aiogram import Router
 from aiogram.filters import ExceptionTypeFilter
@@ -16,10 +17,10 @@ async def go_to_main_menu_after_error(event: ErrorEvent, state: FSMContext):
     logger = logging.getLogger(__name__)
     if event.update.message:
         await event.update.message.answer(
-            f"Oops, something went wrong!",
+            f"Упс, что-то пошло не так!\n\nПросьба написать об этом @kudrmax, приложив скрины того, что именно вы делали, чтобы автор бота исправил баг!",
             reply_markup=main_kb(User(event.update.message)),
         )
-    logger.error(f"Unhandled exception: {event.exception}")
+    logger.error(f"Unhandled exception: {event.exception}.\n{traceback.format_exc()}")
     await state.clear()
 
 

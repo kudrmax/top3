@@ -44,10 +44,10 @@ def test_service_checks_success(mock_service, test_case):
 
     mock_service.repository.get_open_plan.return_value = get_current_result
 
-    is_all_closed = mock_service.is_all_closed(user)
+    is_all_closed = mock_service.all_is_closed(user)
     assert is_all_closed == is_all_closed_expected
 
-    there_are_not_closed = mock_service.there_are_not_closed(user)
+    there_are_not_closed = mock_service.not_all_is_closed(user)
     assert there_are_not_closed == there_are_not_closed_expected
 
     assert is_all_closed != there_are_not_closed

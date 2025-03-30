@@ -19,7 +19,7 @@ def none():
 
 
 def main_kb(user: User):
-    if daily_plans_service.is_all_closed(user):
+    if daily_plans_service.all_is_closed(user):
         return create_plan_kb()
     return get_plan_kb()
 

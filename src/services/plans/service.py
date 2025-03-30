@@ -1,5 +1,7 @@
 import logging
 import datetime as dt
+from enum import Enum
+from typing import Tuple
 
 from src.common.date_and_time import get_today
 from src.models.daily_plan import DailyPlanCreate, DailyPlan
@@ -8,6 +10,11 @@ from src.services.plans.errors import NeedPlanErr, NeedCountErr, NeedDateErr, Th
 from src.storage.postgres.connection import engine
 from src.storage.postgres.repositories.daily_plans.repository import DailyPlansRepository
 from src.storage.postgres.repositories.daily_plans.errors import PlanAlreadyExistsWithThisDateErr, OpenPlanNotFoundErr
+
+
+class CannotCreateReason(str, Enum):
+    ThereIsOpenPlan = 'there_is_open_plan'
+    ThereArePlanForTodayAndTomorrow = 'there_are_plans_for_today_and_tomorrow'
 
 
 class DailyPlansService:
@@ -20,17 +27,31 @@ class DailyPlansService:
         self._raise_if_cannot_create(user)
         self.repository.create(user, plan_create)
 
-    def get_current(self, user: User) -> DailyPlan | None:
-        return self.repository.get_open_plan(user)
-
     def complete_current(self, user: User, real_complete_count: int) -> None:
         return self.repository.complete_open_plan(user, real_complete_count)
 
-    def there_are_not_closed(self, user: User) -> bool:
-        return not self.is_all_closed(user)
+    def get_current(self, user: User) -> DailyPlan | None:
+        return self.repository.get_open_plan(user)
 
-    def is_all_closed(self, user: User) -> bool:
+    def all_is_closed(self, user: User) -> bool:
         return self.get_current(user) is None
+
+    def not_all_is_closed(self, user: User) -> bool:
+        return not self.all_is_closed(user)
+
+    def get_last_closed_plan_date(self, user: User) -> dt.date | None:
+        last_plan = self.get_last_closed_plan_by_user(user)
+        if last_plan is None:
+            return None
+        return last_plan.date
+
+    def can_create_new_plan(self, user: User) -> Tuple[bool, CannotCreateReason | None]:
+        all_is_closed = self.all_is_closed(user)
+        if not all_is_closed:
+            return False, CannotCreateReason.ThereIsOpenPlan
+        if self.is_date_for_creation_tomorrow(user):
+            return True, None
+        return False, CannotCreateReason.ThereArePlanForTodayAndTomorrow
 
     def is_date_for_creation_tomorrow(self, user: User) -> bool:
         last_plan = self.get_last_closed_plan_by_user(user)
@@ -54,7 +75,7 @@ class DailyPlansService:
             raise NeedDateErr
 
     def _raise_if_cannot_create(self, user: User):
-        if self.there_are_not_closed(user):
+        if self.not_all_is_closed(user):
             raise ThereIsOpenPlanErr
 
 
