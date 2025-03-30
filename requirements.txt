@@ -9,3 +9,4 @@ python-decouple
 requests
 pytest
 pytest-mock
+pytz
