@@ -2,10 +2,15 @@ import datetime as dt
 
 import pytz
 
+timezone = pytz.timezone('Europe/Moscow')
+
+
+def get_now():
+    return dt.datetime.now(timezone)
+
 
 def get_today():
-    timezone = pytz.timezone('Europe/Moscow')
-    now = dt.datetime.now(timezone)
+    now = get_now()
     today = now.date()
     return today
 

@@ -4,6 +4,7 @@ from typing import List
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
+from src.common.date_and_time import get_today, get_now
 from src.models.daily_plan import DailyPlan, DailyPlanCreate, DailyPlanUpdate
 from src.errors.base_errors import NotFoundErr
 from src.models.user import User
@@ -28,12 +29,22 @@ class DailyPlansRepository(BaseRepository):
             self.execute(query, params)
         except IntegrityError as e:
             if 'duplicate key value violates unique constraint' in str(e):
-                raise PlanAlreadyExistsWithThisDateErr(user=user.to_dict(), date=plan.date)
+                raise PlanAlreadyExistsWithThisDateErr(user=user.to_dict(), date=plan.date, datetime=get_now())
 
-    def update(self, user: User, plan_id: int, plan_update: DailyPlanUpdate) -> None:
-        current_plan = self.get_open_plan(user)
-        if current_plan is None:
-            raise NotFoundErr
+    def update_by_id(self, plan_id: int, plan_update: DailyPlanUpdate) -> None:
+        query = text("""
+            UPDATE daily_plans
+            SET 
+                plans = COALESCE(:plans, plans), 
+                count = COALESCE(:count, count)
+            WHERE id = :id
+        """)
+        params = Params(
+            plans=plan_update.plan,
+            count=plan_update.count,
+            id=plan_id,
+        )
+        self.execute(query, params)
 
     def get_open_plan(self, user: User) -> DailyPlan | None:
         query = text('''

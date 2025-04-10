@@ -16,3 +16,10 @@ class NeedDateErr(MyException):
 
 class ThereIsOpenPlanErr(MyException):
     message = "There is open plan"
+
+
+class ThereIsNoOpenPlanErr(MyException):
+    message = "There is no open plan"
+
+    def __init__(self, user: User):
+        self.details = {'user': user}

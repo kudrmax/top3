@@ -2,12 +2,9 @@ import dataclasses
 from unittest.mock import MagicMock
 
 import pytest
-import datetime as dt
 
 from src.common.testcase import TestCaseBase
-from src.models.daily_plan import DailyPlanCreate, DailyPlan
 from src.models.user import User
-from src.services.plans.errors import NeedPlanErr, NeedCountErr, NeedDateErr, ThereIsOpenPlanErr
 
 
 @dataclasses.dataclass(frozen=True)

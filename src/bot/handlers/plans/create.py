@@ -5,6 +5,7 @@ from aiogram.types import Message
 import datetime as dt
 
 from src.bot.functions.plans.get_current_plan_text import get_current_plan_text
+from src.bot.functions.plans.validate_count import validate_count
 from src.bot.functions.style import b
 from src.bot.handlers.texsts import Texts
 from src.bot.sevices.create_plan import CreateDailyPlanStateService, PropertyName
@@ -81,7 +82,8 @@ async def get_count(message: Message, state: FSMContext):
 
 @router.message(CreateState.waiting_for_count)
 async def set_count(message: Message, state: FSMContext):
-    count = await validate_count(message, message.text)
+    count_text = message.text
+    count = await validate_count(message, count_text)
     if not count:
         return
     await CreateDailyPlanStateService.add_data_to_state(User(message), state, count, PropertyName.COUNT)
@@ -106,26 +108,6 @@ async def set_date(message: Message, state: FSMContext):
     date = get_today() + dt.timedelta(days=1) if 'завтра' in message.text else dt.date.today()
     await CreateDailyPlanStateService.add_data_to_state(User(message), state, date, PropertyName.DATE)
     await try_create_daily_plan(message, state)
-
-
-async def validate_count(message: Message, text: str) -> int | None:
-    try:
-        count = int(text)
-    except ValueError:
-        await message.answer(
-            'Количество задач – это число, поэтому введите число',
-            reply_markup=none()
-        )
-        return None
-
-    if count < 1:
-        await message.answer(
-            'Количество задач не может быть меньше 1',
-            reply_markup=none()
-        )
-        return None
-
-    return count
 
 
 async def get_not_all_is_closed_reply(message: Message, state: FSMContext):

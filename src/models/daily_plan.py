@@ -21,6 +21,5 @@ class DailyPlanCreate:
 
 @dataclasses.dataclass
 class DailyPlanUpdate:
-    tg_id: int
     plan: str | None = None
     count: int | None = None

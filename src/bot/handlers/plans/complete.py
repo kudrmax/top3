@@ -37,13 +37,13 @@ async def complete_plan(message: Message, state: FSMContext):
         return
 
     await message.answer(
-        "Сколько задач вы выполнили?",
-        reply_markup=none()
-    )
-    await message.answer(
         get_current_plan_text(User(message)),
         reply_markup=none(),
         parse_mode=ParseMode.HTML
+    )
+    await message.answer(
+        "Сколько задач вы выполнили?",
+        reply_markup=none()
     )
     await state.set_state(CompleteState.waiting_for_number)
 
@@ -88,7 +88,7 @@ async def validate_real_count(message: Message) -> int | None:
     plan = daily_plans_service.get_current(User(message))
     if real_complete_count > plan.count:
         await message.answer(
-            'Вы не могли закрыть больше задач, чем запланировали.'
+            'Вы не могли закрыть больше задач, чем запланировали.\n'
             f'Введите число меньшее или равное {plan.count}.',
             reply_markup=none()
         )
