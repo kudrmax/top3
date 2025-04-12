@@ -9,7 +9,6 @@ from src.models.user import User
 from src.services.plans.errors import NeedPlanErr, NeedCountErr, NeedDateErr, ThereIsOpenPlanErr, ThereIsNoOpenPlanErr
 from src.storage.postgres.connection import engine
 from src.storage.postgres.repositories.daily_plans.repository import DailyPlansRepository
-from src.storage.postgres.repositories.daily_plans.errors import PlanAlreadyExistsWithThisDateErr, OpenPlanNotFoundErr
 
 
 class CannotCreateReason(str, Enum):
