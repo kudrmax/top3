@@ -49,6 +49,20 @@ class ReminderSetting:
         self.creation_reminder_time = model.creation_reminder_time
         self.reminder_times = model.reminder_times
 
+    def get_times(self) -> List[dt.time]:
+        result = []
+
+        time = self.creation_reminder_time
+        if time is not None:
+            result.append(time)
+
+        times = self.reminder_times
+        if times is not None and len(times) > 0:
+            for time in times:
+                result.append(time)
+
+        return result
+
     @staticmethod
     def _convert_str_to_time(time_str: str) -> dt.time | None:
         if time_str is None:
