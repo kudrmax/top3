@@ -13,7 +13,7 @@ def get_header(date: dt.date):
     elif date == get_tomorrow():
         date_str = 'завтра'
     else:
-        date_str = f'{date.day}.{date.month}.{date.year}'
+        date_str = f'{date.day:02}.{date.month:02}.{date.year}'
 
     return b(f'🏆 Топ-3 задачи на {date_str}')
 
