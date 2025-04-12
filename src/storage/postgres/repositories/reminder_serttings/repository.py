@@ -32,7 +32,8 @@ class ReminderSettingRepository(BaseRepository):
         ''')
         params = Params(tg_id=user.tg_id)
         result = self.execute(query, params)
-        return self.__convert_row_to_model(result)
+        row = result.fetchone()
+        return self.__convert_row_to_model(row)
 
     def get_all(self) -> List[ReminderSetting]:
         query = text('''

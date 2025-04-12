@@ -6,6 +6,7 @@ from aiogram.types import Message
 from src.bot.handlers.plans.complete import complete_plan
 from src.bot.handlers.plans.create import try_create_daily_plan
 from src.bot.handlers.plans.get import get_plan
+from src.bot.handlers.plans.reminders import setup_reminders
 from src.bot.handlers.plans.update import update_plan
 from src.bot.handlers.texsts import Texts
 from src.bot.keyboards import main_kb
@@ -53,6 +54,11 @@ async def complete(message: Message, state: FSMContext):
 @router.message(StateFilter(None), F.text.lower().contains('изменить'))
 async def update(message: Message, state: FSMContext):
     await update_plan(message, state)
+
+
+@router.message(StateFilter(None), F.text.lower().contains('уведомления'))
+async def reminders(message: Message, state: FSMContext):
+    await setup_reminders(message, state)
 
 
 @router.message(StateFilter(None), F.text.lower().contains('сообщить'))

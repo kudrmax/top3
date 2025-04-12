@@ -40,5 +40,20 @@ def get_plan_kb():
     return make_keyboard_by_lists([
         ['Посмотреть задачи', 'Изменить задачи'],
         ['Подтвердить выполнение задач'],
+        ['Настроить уведомления'],
         ['Сообщить о баге'],
+    ])
+
+
+def reminders_settings_kb():
+    return make_keyboard_by_lists([
+        ['Выбрать время по умолчанию'],
+        ['Настроить индивидуально'],
+    ])
+
+
+def reminders_settings_concrete_kb():
+    return make_keyboard_by_lists([
+        ['Выбрать время по умолчанию'],
+        ['Пропустить'],
     ])

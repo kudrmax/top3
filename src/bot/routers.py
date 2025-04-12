@@ -7,6 +7,7 @@ from src.bot.handlers.plans.create import router as create
 from src.bot.handlers.plans.update import router as update
 from src.bot.handlers.plans.get import router as get
 from src.bot.handlers.plans.complete import router as complete
+from src.bot.handlers.plans.reminders import router as reminders
 
 router = Router()
 
@@ -17,4 +18,5 @@ router.include_routers(
     update,
     complete,
     get,
+    reminders
 )

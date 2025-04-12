@@ -9,8 +9,8 @@ from apscheduler.triggers.cron import CronTrigger
 from src.models.reminders.reminder_settings import ReminderSettingUpsert, ReminderSetting
 from src.models.user import User
 from src.services.plans.service import daily_plans_service
+from src.services.reminders.reminder_settings_service import ReminderSettingsService
 from src.services.scheduler.service import IJob, SchedulerService
-from src.storage.postgres.repositories.reminder_serttings.repository import ReminderSettingRepository
 
 
 class PlanReminderJob(IJob):
@@ -25,20 +25,20 @@ class PlanReminderJob(IJob):
 class ReminderService(SchedulerService):
     def __init__(
             self,
-            reminder_repository: ReminderSettingRepository,
+            reminder_settings_service: ReminderSettingsService,
             bot: Bot
     ):
         super().__init__()
 
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        self.reminder_repository = reminder_repository
+        self.reminder_settings_service = reminder_settings_service
         self.bot = bot
 
         self.init_schedule()
 
     def init_schedule(self):
-        for reminder_setting in self.reminder_repository.get_all():
+        for reminder_setting in self.reminder_settings_service.get_all():
             if reminder_setting:
                 user = User(reminder_setting.tg_id)
                 self.schedule_reminders(user, None, reminder_setting)
@@ -106,11 +106,11 @@ class ReminderService(SchedulerService):
             await self.send_creation_reminder(user)
 
     def update_user_settings(self, user: User, reminder_settings: ReminderSettingUpsert) -> None:
-        old_reminder_settings = self.reminder_repository.get(user)
+        old_reminder_settings = self.reminder_settings_service.get(user)
 
-        self.reminder_repository.upsert(user, reminder_settings)
+        self.reminder_settings_service.upsert(user, reminder_settings)
 
-        new_reminder_settings = ReminderSetting(user.tg_id).init_from_upsert_model(reminder_settings)
+        new_reminder_settings = ReminderSetting(user.tg_id).enrich_from_upsert_model(reminder_settings)
         self.schedule_reminders(
             user,
             old_reminder_settings,

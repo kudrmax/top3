@@ -14,3 +14,8 @@ class CompleteState(StatesGroup):
 class UpdateState(StatesGroup):
     waiting_for_text = State()
     waiting_for_number = State()
+
+
+class ReminderSetup(StatesGroup):
+    waiting_for_creation_time = State()
+    waiting_for_plan_times = State()
