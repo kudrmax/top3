@@ -23,19 +23,29 @@ class PlanReminderJob(IJob):
 
 
 class ReminderService(SchedulerService):
+    _instance = None  # for singleton
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(
             self,
             reminder_settings_service: ReminderSettingsService,
             bot: Bot
     ):
-        super().__init__()
+        if not hasattr(self, "initialized_singleton"):
+            super().__init__()
 
-        self.logger = logging.getLogger(self.__class__.__name__)
+            self.logger = logging.getLogger(self.__class__.__name__)
 
-        self.reminder_settings_service = reminder_settings_service
-        self.bot = bot
+            self.reminder_settings_service = reminder_settings_service
+            self.bot = bot
 
-        self.init_schedule()
+            self.init_schedule()
+
+            self.initialized_singleton = True
 
     def init_schedule(self):
         for reminder_setting in self.reminder_settings_service.get_all():
@@ -110,7 +120,7 @@ class ReminderService(SchedulerService):
 
         self.reminder_settings_service.upsert(user, reminder_settings)
 
-        new_reminder_settings = ReminderSetting(user.tg_id).enrich_from_upsert_model(reminder_settings)
+        new_reminder_settings = self.reminder_settings_service.get(user)
         self.schedule_reminders(
             user,
             old_reminder_settings,

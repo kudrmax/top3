@@ -29,6 +29,7 @@ async def main():
         reminder_settings_service=reminder_settings_service,
         bot=bot
     )
+    dp["reminder_service"] = reminder_service
 
     # запуск бота
     logging.info("Bot is running...")
