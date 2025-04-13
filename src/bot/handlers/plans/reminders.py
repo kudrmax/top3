@@ -26,16 +26,6 @@ class BadMinuteErr(Exception):
 
 
 async def setup_reminders(message: Message, state: FSMContext):
-    """
-    - показать текущие настройки
-    - хотите изменить настройки?
-        - Когда вам напомнить, что нужно создать задачи.
-            - Кнопка: скип
-            - Кнопка: отключить напоминание о создании
-        - Когда напоминать о задачах?
-            - Кнопка: скип
-            - Кнопка: отключить напоминание о создании
-    """
     reminder_settings = reminder_settings_service.get(User(message))
     if not reminder_settings:
         reminder_settings_str = "У вас пока отключены уведомления"
@@ -54,7 +44,14 @@ async def setup_reminders(message: Message, state: FSMContext):
 
 @router.message(StateFilter(None), F.text.lower().contains('по умолчанию'))
 async def set_default(message: Message, state: FSMContext):
-    pass  # отправить что все ок
+    default_creation_time = dt.time(9, 0)
+    default_plans_reminders = [
+        dt.time(12, 0),
+        dt.time(15, 0),
+        dt.time(18, 0),
+    ]
+
+    await update_and_answer_reminder_settings(message, state, default_creation_time, default_plans_reminders)
 
 
 @router.message(StateFilter(None), F.text.lower().contains('индивидуально'))
@@ -106,15 +103,7 @@ async def waiting_for_plan_times(
     data = await state.get_data()
     creating_time = data.get('creating_time')
 
-    settings = await update_and_get_reminder_settings(message, creating_time=creating_time, plans_times=plans_times)
-    if not settings:
-        raise Err500("Bad update reminder settings")
-    await message.answer("Уведомления успешно настроены.")
-    await message.answer(
-        settings.to_readable_str(),
-        reply_markup=main_kb(User(message))
-    )
-    await state.clear()
+    await update_and_answer_reminder_settings(message, state, creating_time, plans_times)
 
 
 async def answer_if_bad_time_validation_and_return(message: Message, text: str) -> dt.time | None:
@@ -157,8 +146,27 @@ async def answer_if_bad_times_validation_and_return(message: Message) -> List[dt
     return times
 
 
+async def update_and_answer_reminder_settings(
+        message: Message,
+        state: FSMContext,
+        creating_time: dt.time,
+        plans_times: List[dt.time]
+):
+    settings = await update_and_get_reminder_settings(message, creating_time=creating_time, plans_times=plans_times)
+    if not settings:
+        raise Err500("Bad update reminder settings")
+
+    await message.answer("Уведомления успешно настроены.")
+    await message.answer(
+        settings.to_readable_str(),
+        reply_markup=main_kb(User(message))
+    )
+    await state.clear()
+
+
 async def update_and_get_reminder_settings(
-        message, creating_time: dt.time,
+        message: Message,
+        creating_time: dt.time,
         plans_times: List[dt.time]
 ) -> ReminderSetting | None:
     reminder_service = ReminderService(None, None)
