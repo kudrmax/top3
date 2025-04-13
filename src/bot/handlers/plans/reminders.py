@@ -6,9 +6,12 @@ from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardMarkup
 
-from src.bot.keyboards import reminders_settings_kb, none
+from src.bot.keyboards import reminders_settings_kb, none, main_kb
 from src.bot.states import ReminderSetup
+from src.errors.base_errors import Err500
+from src.models.reminders.reminder_settings import ReminderSettingUpsert, ReminderSetting
 from src.models.user import User
+from src.services.reminders.reminder_service import ReminderService
 from src.services.reminders.reminder_settings_service import reminder_settings_service
 
 router = Router()
@@ -71,7 +74,7 @@ async def set_specific(message: Message, state: FSMContext):
 
 @router.message(ReminderSetup.waiting_for_creation_time)
 async def waiting_for_creation_time(message: Message, state: FSMContext):
-    time= await answer_if_bad_time_validation_and_return(message, message.text)
+    time = await answer_if_bad_time_validation_and_return(message, message.text)
     if not time:
         return
     await state.update_data(creating_time=time)
@@ -94,13 +97,24 @@ async def waiting_for_creation_time(message: Message, state: FSMContext):
 
 
 @router.message(ReminderSetup.waiting_for_plan_times)
-async def waiting_for_plan_times(message: Message, state: FSMContext):
+async def waiting_for_plan_times(
+        message: Message,
+        state: FSMContext,
+):
     plans_times: List[dt.time] = await answer_if_bad_times_validation_and_return(message)
 
     data = await state.get_data()
     creating_time = data.get('creating_time')
 
-    add_times_to_reminder_settings(creating_time=creating_time, plans_times=plans_times)
+    settings = await update_and_get_reminder_settings(message, creating_time=creating_time, plans_times=plans_times)
+    if not settings:
+        raise Err500("Bad update reminder settings")
+    await message.answer("Уведомления успешно настроены.")
+    await message.answer(
+        settings.to_readable_str(),
+        reply_markup=main_kb(User(message))
+    )
+    await state.clear()
 
 
 async def answer_if_bad_time_validation_and_return(message: Message, text: str) -> dt.time | None:
@@ -143,5 +157,18 @@ async def answer_if_bad_times_validation_and_return(message: Message) -> List[dt
     return times
 
 
-def add_times_to_reminder_settings(creating_time: dt.time, plans_times: List[dt.time]) -> None:
-    pass
+async def update_and_get_reminder_settings(
+        message, creating_time: dt.time,
+        plans_times: List[dt.time]
+) -> ReminderSetting | None:
+    reminder_service = ReminderService(None, None)
+    up = ReminderSettingUpsert(
+        creation_reminder_time=creating_time,
+        reminder_times=plans_times,
+    )
+    reminder_service.update_user_settings(
+        User(message),
+        up
+    )
+    settings = reminder_service.reminder_settings_service.get(User(message))
+    return settings

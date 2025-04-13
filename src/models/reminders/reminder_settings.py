@@ -53,7 +53,8 @@ class ReminderSetting:
     ):
         self.tg_id = tg_id
         self.creation_reminder_time = self._convert_str_to_time(creation_reminder_time_str)
-        self.reminder_times = [self._convert_str_to_time(t) for t in reminder_times_str]
+        if reminder_times_str:
+            self.reminder_times = [self._convert_str_to_time(t) for t in reminder_times_str]
 
     def enrich_from_upsert_model(self, model: ReminderSettingUpsert):
         self.creation_reminder_time = model.creation_reminder_time
@@ -78,8 +79,7 @@ class ReminderSetting:
         plan_reminder_header = "Время уведомлений о самих задачах:"
         not_set_reminder_header = "Не указано"
 
-        creation_reminder_time_list = [
-            self.creation_reminder_time] if self.creation_reminder_time else not_set_reminder_header
+        creation_reminder_time_list =  [f'{t.hour:02}:{t.minute:02}' for t in [self.creation_reminder_time]] if self.creation_reminder_time else not_set_reminder_header
         plan_reminder_times_list = [
             f'{t.hour:02}:{t.minute:02}' for t in self.reminder_times
         ] if (self.reminder_times or len(self.reminder_times) > 0) else not_set_reminder_header
