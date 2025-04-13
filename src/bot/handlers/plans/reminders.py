@@ -6,7 +6,7 @@ from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardMarkup
 
-from src.bot.keyboards import reminders_settings_kb, none, main_kb
+from src.bot.keyboards import reminders_settings_kb, none, main_kb, reminders_settings_concrete_kb
 from src.bot.states import ReminderSetup
 from src.errors.base_errors import Err500
 from src.models.reminders.reminder_settings import ReminderSettingUpsert, ReminderSetting
@@ -15,6 +15,13 @@ from src.services.reminders.reminder_service import ReminderService
 from src.services.reminders.reminder_settings_service import reminder_settings_service
 
 router = Router()
+
+default_creation_time = dt.time(9, 0)
+default_plans_reminders = [
+    dt.time(12, 0),
+    dt.time(15, 0),
+    dt.time(18, 0),
+]
 
 
 class BadHourErr(Exception):
@@ -44,14 +51,12 @@ async def setup_reminders(message: Message, state: FSMContext):
 
 @router.message(StateFilter(None), F.text.lower().contains('по умолчанию'))
 async def set_default(message: Message, state: FSMContext):
-    default_creation_time = dt.time(9, 0)
-    default_plans_reminders = [
-        dt.time(12, 0),
-        dt.time(15, 0),
-        dt.time(18, 0),
-    ]
-
-    await update_and_answer_reminder_settings(message, state, default_creation_time, default_plans_reminders)
+    await update_and_answer_reminder_settings(
+        message,
+        state,
+        default_creation_time,
+        default_plans_reminders
+    )
 
 
 @router.message(StateFilter(None), F.text.lower().contains('индивидуально'))
@@ -60,13 +65,29 @@ async def set_specific(message: Message, state: FSMContext):
         "Когда вы хотите, чтобы вам приходили уведомления о том, что вы не создали задачи?"
         "\n\n"
         "P. S. Если на момент этого времени вы уже создали задачи, то уведомление не придет.",
-        reply_markup=none()
+        reply_markup=reminders_settings_concrete_kb()
     )
     await message.answer(
         'Вводите время в формате "ЧЧ:ММ". Например 10:00 или 07:00".',
-        reply_markup=none()
+        reply_markup=reminders_settings_concrete_kb()
     )
     await state.set_state(ReminderSetup.waiting_for_creation_time)
+
+
+@router.message(ReminderSetup.waiting_for_creation_time, F.text.lower().contains('по умолчанию'))
+async def waiting_for_creation_time_default(message: Message, state: FSMContext):
+    await state.update_data(creating_time=default_creation_time)
+    await message.answer("Выбрано время по умолчанию.")
+    await answer_to_type_plans_dates(message, state)
+
+
+@router.message(ReminderSetup.waiting_for_creation_time, F.text.lower().contains('не менять'))
+async def waiting_for_creation_time_skip(message: Message, state: FSMContext):
+    settings = reminder_settings_service.get(User(message))
+    creating_time = settings.creation_reminder_time if settings else None
+    await state.update_data(creating_time=creating_time)
+    await message.answer("Хорошо, не будем менять это время.")
+    await answer_to_type_plans_dates(message, state)
 
 
 @router.message(ReminderSetup.waiting_for_creation_time)
@@ -75,22 +96,40 @@ async def waiting_for_creation_time(message: Message, state: FSMContext):
     if not time:
         return
     await state.update_data(creating_time=time)
+    await answer_to_type_plans_dates(message, state)
 
+
+async def answer_to_type_plans_dates(message: Message, state: FSMContext):
     await message.answer(
         "Когда вы хотите, чтобы вам приходили уведомления об уже созданных задачах?"
         "\n\n"
         "P. S. Если на момент этого времени у вас нет созданных задач, то уведомления не придут.",
-        reply_markup=none()
+        reply_markup=reminders_settings_concrete_kb()
     )
     await message.answer(
         'Вводите время в следующем формате (каждое время с новой строки):\n'
         'ЧЧ:ММ\nЧЧ:ММ\n\n'
         'Например:\n'
         '12:00\n15:00\n18:00',
-        reply_markup=none()
+        reply_markup=reminders_settings_concrete_kb()
     )
 
     await state.set_state(ReminderSetup.waiting_for_plan_times)
+
+
+@router.message(ReminderSetup.waiting_for_plan_times, F.text.lower().contains('по умолчанию'))
+async def waiting_for_plan_times_default(message: Message, state: FSMContext):
+    plans_times = default_plans_reminders
+    await message.answer("Выбрано время по умолчанию.")
+    await update_and_answer_reminder_settings_without_creating_time(message, state, plans_times)
+
+
+@router.message(ReminderSetup.waiting_for_plan_times, F.text.lower().contains('не менять'))
+async def waiting_for_plan_times_skip(message: Message, state: FSMContext):
+    settings = reminder_settings_service.get(User(message))
+    plans_times = settings.reminder_times if settings else None
+    await message.answer("Хорошо, не будем менять это время.")
+    await update_and_answer_reminder_settings_without_creating_time(message, state, plans_times)
 
 
 @router.message(ReminderSetup.waiting_for_plan_times)
@@ -99,7 +138,10 @@ async def waiting_for_plan_times(
         state: FSMContext,
 ):
     plans_times: List[dt.time] = await answer_if_bad_times_validation_and_return(message)
+    await update_and_answer_reminder_settings_without_creating_time(message, state, plans_times)
 
+
+async def update_and_answer_reminder_settings_without_creating_time(message, state, plans_times):
     data = await state.get_data()
     creating_time = data.get('creating_time')
 
@@ -156,7 +198,7 @@ async def update_and_answer_reminder_settings(
     if not settings:
         raise Err500("Bad update reminder settings")
 
-    await message.answer("Уведомления успешно настроены.")
+    await message.answer("✅ Уведомления успешно настроены.")
     await message.answer(
         settings.to_readable_str(),
         reply_markup=main_kb(User(message))

@@ -35,10 +35,10 @@ class SchedulerService:
         )
 
     def _get_job(self, job: IJob):
-        self.scheduler.get_job(job.id())
+        return self.scheduler.get_job(job.id())
 
     def _remove_job(self, job: IJob):
-        self.scheduler.remove_job(job.id())
+        return self.scheduler.remove_job(job.id())
 
     def remove_if_exists(self, jobs: List[IJob] | IJob):
         if isinstance(jobs, IJob):

@@ -14,12 +14,22 @@ from src.services.scheduler.service import IJob, SchedulerService
 
 
 class PlanReminderJob(IJob):
+    type: str
+
     def __init__(self, tg_id: int, time: dt.time):
         self.tg_id = tg_id
         self.time = time
 
     def id(self):
-        return f"plan_reminder_{self.tg_id}_{self.time.hour}_{self.time.minute}"
+        return f"plan_reminder_{self.type}_{self.tg_id}_{self.time.hour}_{self.time.minute}"
+
+
+class CreationPlanReminderJob(PlanReminderJob):
+    type: str = "creation"
+
+
+class RegularPlanReminderJob(PlanReminderJob):
+    type: str = "regular"
 
 
 class ReminderService(SchedulerService):
@@ -59,8 +69,20 @@ class ReminderService(SchedulerService):
         if not reminder_settings:
             return
 
-        times = reminder_settings.get_times()
-        jobs = [PlanReminderJob(user.tg_id, time) for time in times]
+        jobs = []
+
+        time = reminder_settings.get_creation_reminder_time()
+        if time:
+            jobs.append(
+                CreationPlanReminderJob(user.tg_id, time)
+            )
+
+        times = reminder_settings.get_regular_reminder_times()
+        for time in times:
+            if time:
+                jobs.append(
+                    RegularPlanReminderJob(user.tg_id, time)
+                )
 
         self.remove_if_exists(jobs)
 
@@ -69,7 +91,7 @@ class ReminderService(SchedulerService):
             func=self.send_creation_reminder,
             trigger_time=time,
             args=[user],
-            job=PlanReminderJob(user.tg_id, time),
+            job=CreationPlanReminderJob(user.tg_id, time),
         )
 
     def _add_plan_reminder_job(self, user: User, time: dt.time):
@@ -77,7 +99,7 @@ class ReminderService(SchedulerService):
             func=self.send_plan_reminder,
             trigger_time=time,
             args=[user],
-            job=PlanReminderJob(user.tg_id, time),
+            job=RegularPlanReminderJob(user.tg_id, time),
         )
 
     def schedule_reminders(
@@ -110,7 +132,7 @@ class ReminderService(SchedulerService):
             plan = curren_plan.plan
             await self.bot.send_message(
                 user.tg_id,
-                f"Фокусируйтесь на главном. Ваши задачи:\n\n{plan}"
+                f"Сфокусируйся на важных задачах:\n\n{plan}"
             )
         else:
             await self.send_creation_reminder(user)

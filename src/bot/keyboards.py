@@ -55,5 +55,5 @@ def reminders_settings_kb():
 def reminders_settings_concrete_kb():
     return make_keyboard_by_lists([
         ['Выбрать время по умолчанию'],
-        ['Пропустить'],
+        ['Не менять эту настройку'],
     ])
