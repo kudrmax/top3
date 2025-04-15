@@ -2,9 +2,6 @@ import datetime as dt
 import logging
 
 from aiogram import Bot
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger
 
 from src.models.reminders.reminder_settings import ReminderSettingUpsert, ReminderSetting
 from src.models.user import User
@@ -121,10 +118,11 @@ class ReminderService(SchedulerService):
                 self._add_plan_reminder_job(user, time)
 
     async def send_creation_reminder(self, user: User) -> None:
-        await self.bot.send_message(
-            user.tg_id,
-            "Напоминание: вы ещё не создали задачи на сегодня!"
-        )
+        if daily_plans_service.all_is_closed():
+            await self.bot.send_message(
+                user.tg_id,
+                "Вы ещё не создали задачи на сегодня!"
+            )
 
     async def send_plan_reminder(self, user: User) -> None:
         curren_plan = daily_plans_service.get_current(user)
