@@ -20,10 +20,10 @@ async def start_main_menu_pipeline(
         state: FSMContext,
 ):
     kb = main_kb(User(message))
-    await message.answer(
-        Texts.start,
-        reply_markup=kb,
-    )
+    # await message.answer(
+    #     Texts.start,
+    #     reply_markup=kb,
+    # )
     await message.answer(
         'Нажмите кнопку "Создать задачи"',
         reply_markup=kb,
