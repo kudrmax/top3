@@ -118,7 +118,7 @@ class ReminderService(SchedulerService):
                 self._add_plan_reminder_job(user, time)
 
     async def send_creation_reminder(self, user: User) -> None:
-        if daily_plans_service.all_is_closed():
+        if daily_plans_service.all_is_closed(user):
             await self.bot.send_message(
                 user.tg_id,
                 "Вы ещё не создали задачи на сегодня!"
